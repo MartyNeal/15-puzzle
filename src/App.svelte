@@ -4,11 +4,12 @@
     import victory from "./assets/victory.mp3";
 
     let N = $state(2);
-    let timer = null;
     let centiSeconds = $state(0);
     let squares = $state([]);
     let wasShuffled = $state(false);
     let showNext = $state(false);
+    let bestSolved = $state(0);
+    let isComplete = $derived(squares.every((x, i) => x === "" || x === i + 1));
     let nextUnsolved = $derived.by(() => {
         let count = 0;
         for (let square of squares) {
@@ -18,35 +19,28 @@
         }
         return count;
     });
-    let bestSolved = $state(0);
+
     $effect(() => {
         if (nextUnsolved > bestSolved) {
             bestSolved = nextUnsolved;
         }
-    })
-
-    $effect(() => {
-        let foo = bestSolved;
-        console.log("Best solved: ", bestSolved);
         if (bestSolved < N * N) {
             successSound.play();
         }
-    });
+    })
 
-    let isComplete = $derived(squares.every((x, i) => x === "" || x === i + 1));
     const successSound = new Audio(shortSuccess);
     const victorySound = new Audio(victory);
     $effect(() => {
         if (isComplete) {
             stop();
             if (wasShuffled) {
-                console.log("Playing sound!!!");
                 victorySound.play();
             }
         }
     });
 
-    reset();
+    let timer = null;
 
     function move(i) {
         let neighbors = [];
@@ -72,7 +66,7 @@
 
     function reset() {
         wasShuffled = false;
-        squares = Array(N * N).fill().map((x, i) => {
+        squares = Array(N * N).fill().map((_, i) => {
             return ++i;
         });
         squares[N * N - 1] = "";
@@ -100,12 +94,9 @@
     }
 
     function stop() {
-        if (typeof timer !== "undefined" && timer !== null) {
-            clearInterval(timer);
-            timer = null;
-        }
+        clearInterval(timer);
+        timer = null;
     }
-
     function moveByArrow(e) {
         if (e.key === "ArrowDown") move(squares.indexOf("") + N);
         if (e.key === "ArrowUp") move(squares.indexOf("") - N);
@@ -113,7 +104,10 @@
         if (e.key === "ArrowLeft") move(squares.indexOf("") - 1);
     }
 
-    $effect(() => document.addEventListener("keydown", moveByArrow));
+    $effect(() => {
+        document.addEventListener("keydown", moveByArrow);
+        return () => document.removeEventListener("keydown", moveByArrow);
+    });
 </script>
 
 <header>
@@ -123,14 +117,15 @@
         {#if isComplete && wasShuffled}
             Complete!
             <div class="confetti">
-                <Confetti x={[-5, 5]} y={[0, 0.1]} delay={[0, 5000]} duration=5000 amount=2000 fallDistance="150vh" />
+                <Confetti x={[-5, 5]} y={[0, 0.1]} delay={[0, 5000]} duration={5000} amount={2000}
+                          fallDistance="150vh"/>
             </div>
         {:else}
             &nbsp;
         {/if}
     </h2>
 </header>
-<main>
+<main use:reset>
     <div class="board" style="--N: {N}" class:showNext={showNext}>
         {#each squares as square, i}
             {@const x = square % 2}
@@ -144,8 +139,10 @@
         {/each}
     </div>
     <div>
-        <label>Show next square</label>
-        <input type="checkbox" bind:checked={showNext}/>
+        <label>
+            Show next square
+            <input type="checkbox" bind:checked={showNext}/>
+        </label>
     </div>
     <button onclick={reset}>Reset</button>
     <button onclick={shuffle}>Shuffle</button>
@@ -166,6 +163,7 @@
         flex-direction: column;
         align-items: center;
     }
+
     main {
         display: flex;
         flex-direction: column;
@@ -183,9 +181,11 @@
     .card {
         cursor: pointer;
         border: 1px solid #ccc;
+
         .showNext &.unsolved {
             border: 4px solid red;
         }
+
         border-radius: 0;
         user-select: none;
         height: 3.5rem;
@@ -207,8 +207,8 @@
 
     .black {
         background: blue;
-    /*    Add a drop shadow */
-    /*    box-shadow: 0 0 0.25rem 0.25rem black;*/
+        /*    Add a drop shadow */
+        /*    box-shadow: 0 0 0.25rem 0.25rem black;*/
     }
 
     .confetti {
