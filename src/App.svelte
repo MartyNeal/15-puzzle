@@ -75,6 +75,10 @@
     }
 
     function shuffle() {
+        // set cursor to busy
+        const html = document.getElementsByTagName("html")[0];
+        html.style.cursor = "wait";
+
         wasShuffled = true;
         let blank = squares.indexOf("");
         for (let i = 0; i < N * N * N * N; i++) {
@@ -91,6 +95,7 @@
         stop();
         bestSolved = 0;
         centiSeconds = 0;
+        html.style.cursor = "";
     }
 
     function stop() {
@@ -154,10 +159,6 @@
 </div>
 
 <style>
-    label, input[type="checkbox"] {
-        display: inline;
-    }
-
     header {
         display: flex;
         flex-direction: column;
@@ -207,8 +208,6 @@
 
     .black {
         background: blue;
-        /*    Add a drop shadow */
-        /*    box-shadow: 0 0 0.25rem 0.25rem black;*/
     }
 
     .confetti {
@@ -221,5 +220,9 @@
         justify-content: center;
         overflow: hidden;
         pointer-events: none;
+    }
+
+    button, input, label {
+        cursor: pointer;
     }
 </style>
